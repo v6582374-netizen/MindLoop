@@ -1,4 +1,4 @@
-import { HTMLAttributes, forwardRef, useState, useRef, useEffect } from "react";
+import { HTMLAttributes, forwardRef, useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "../../lib/utils";
 import Input from "./Input";
 
@@ -17,7 +17,8 @@ const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
   ({ className, value, onChange, disabled = false, ...props }, ref) => {
     const [isOpen, setIsOpen] = useState(false);
     const [internalRange, setInternalRange] = useState<DateRange>({ start: null, end: null });
-    const containerRef = useRef<HTMLDivElement>(null);
+    // 使用可变对象来存储 DOM 节点引用，避免只读问题
+    const containerRefObj = useRef<{ element: HTMLDivElement | null }>({ element: null });
     
     const range = value || internalRange;
     
@@ -53,9 +54,20 @@ const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
       onChange?.(newRange);
     };
     
+    // 合并 ref：同时设置 containerRef 和传入的 ref
+    const setRefs = useCallback((node: HTMLDivElement | null) => {
+      containerRefObj.current.element = node;
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref) {
+        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      }
+    }, [ref]);
+    
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
-        if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        const element = containerRefObj.current.element;
+        if (element && !element.contains(event.target as Node)) {
           setIsOpen(false);
         }
       };
@@ -69,7 +81,7 @@ const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
     }, [isOpen]);
     
     return (
-      <div ref={containerRef} className={cn("relative", className)} {...props}>
+      <div ref={setRefs} className={cn("relative", className)} {...props}>
         <div className="flex items-center gap-2">
           <div className="flex-1">
             <label className="block text-xs text-gray-500 mb-1">开始日期</label>

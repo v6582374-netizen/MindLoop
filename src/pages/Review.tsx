@@ -134,11 +134,6 @@ export default function Review() {
     setShowExplanation(true);
   };
 
-  const handleViewAnswer = () => {
-    setShowAnswer(true);
-    setShowExplanation(true);
-  };
-
   const handleFeedback = async (quality: number) => {
     // 更新笔记的复习状态
     // 注意：由于题目是从多个笔记生成的，我们需要更新所有相关的笔记
