@@ -30,13 +30,15 @@
 
 ## 📖 Introduction
 
-**MindLoop** is not just another note-taking app. It is a **"Knowledge Internalization Engine"** designed for lifelong learners, developers, and researchers.
+**MindLoop** is more than just a note-taking app—it's a **knowledge internalization engine** built for lifelong learners, developers, and researchers.
 
-In the age of information overload, we collect too much but remember too little. MindLoop bridges the gap between "Collecting" and "Mastering" by combining **Local-First Privacy**, **Spaced Repetition Systems (SRS)**, and **Generative AI**.
+Two reasons drove the development of this system:
+1. I believe the learning paradigm will be fundamentally reshaped in the upcoming AI era. Yet few actively explore or demand this shift. Deeply dissatisfied with current university education, I decided to build a small tool to boost my self-learning efficiency—while simultaneously exploring new pathways to academic credentials.
+In this age of information overload, we hoard vast amounts of content but retain far too little. Especially as interdisciplinary education gains prominence, MindLoop bridges the gap between “collecting” and “mastery.” By integrating **Local-First privacy protocols**, **Spaced Repetition Scheduling (SRS)**, and **Generative AI**, it transforms fragmented knowledge into lasting wisdom.
+Simply capture inspiration instantly with global shortcuts—leave the rest—question generation, review scheduling, and pacing—to AI and algorithms.
 
-Capture anything instantly via global shortcuts, and let the AI generate quizzes based on your notes to help you fight the forgetting curve.
+2. This also marks my first Vibe Coding project, serving as an experiment in AI Agent-assisted development.
 
-> **MindLoop** 是一个“知识内化引擎”。在信息过载的时代，我们收藏得太多，记住得太少。MindLoop 利用本地优先的隐私策略、间隔重复算法 (SRS) 和生成式 AI，帮你把碎片化的信息真正转化为长期的智慧。
 
 ## ✨ Key Features
 
