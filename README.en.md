@@ -1,4 +1,4 @@
-# 🧠 MindLoop (思维闭环)
+# 🧠 MindLoop 
 # My Project
 
 *This project supports multiple languages. Please select your language below.*
@@ -15,7 +15,6 @@
 
 ![MindLoop Banner](https://via.placeholder.com/1200x400.png?text=MindLoop+Banner)
 **From Fragmentation to Wisdom.**
-**从碎片到智慧：基于 Rust 与 AI 的本地化知识内化引擎。**
 
 [![Rust](https://img.shields.io/badge/Built_with-Rust-orange?style=flat-square&logo=rust)](https://www.rust-lang.org/)
 [![Tauri 2.0](https://img.shields.io/badge/Framework-Tauri_2.0-blue?style=flat-square&logo=tauri)](https://tauri.app/)
@@ -41,17 +40,17 @@ Capture anything instantly via global shortcuts, and let the AI generate quizzes
 
 ## ✨ Key Features
 
-### 🚀 Capture Flow (极速捕获)
+### 🚀 Capture Flow 
 * **Global Shortcuts:** Press `Cmd+Shift+X` (or your custom key) to capture text from any app instantly.
 * **Smart Clipboard:** Automatically detects text or images.
 * **Local Storage:** All data is stored in a local SQLite database (`rusqlite`). Your data never leaves your device unless you ask the AI.
 
-### 🧠 Intelligent Review (智能复习)
+### 🧠 Intelligent Review 
 * **AI-Generated Quizzes:** Connects to **DeepSeek** or **OpenAI** to transform your raw notes into interactive quizzes (Choice/QA).
 * **SRS Algorithm:** Implements a modified **SuperMemo-2** algorithm. The system schedules reviews based on your memory strength (Ease Factor).
 * **Review Dashboard:** Visualize your learning progress with GitHub-style contribution heatmaps and review analytics.
 
-### 🎨 Enterprise-Grade UI (企业级界面)
+### 🎨 Enterprise-Grade UI 
 * **Modern Design:** Built with **Shadcn/UI** and TailwindCSS for a clean, distraction-free experience.
 * **Sidebar Layout:** Easy navigation between Dashboard, Library, Tasks, and Review sessions.
 * **Dark Mode:** Optimized for late-night coding/reading sessions.
