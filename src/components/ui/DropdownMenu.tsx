@@ -22,37 +22,50 @@ export default function DropdownMenu({
       }
     };
 
-    const handleCloseMenu = () => {
-      setIsOpen(false);
-    };
-
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("close-menu", handleCloseMenu);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("close-menu", handleCloseMenu);
     };
   }, [isOpen]);
 
+  const closeMenu = () => setIsOpen(false);
+
   return (
     <div className="relative" ref={menuRef}>
-      <div onClick={() => setIsOpen(!isOpen)}>{trigger}</div>
+      <div 
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+      >
+        {trigger}
+      </div>
       {isOpen && (
         <div
           className={cn(
-            "absolute z-50 mt-1 min-w-[160px] rounded-md border border-gray-200 bg-white shadow-lg",
+            "absolute z-50 mt-1 min-w-[160px] rounded-lg border border-slate-200/60 bg-white shadow-lg py-1",
             align === "right" ? "right-0" : "left-0"
           )}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div className="py-1">{children}</div>
+          <DropdownMenuContext.Provider value={{ closeMenu }}>
+            {children}
+          </DropdownMenuContext.Provider>
         </div>
       )}
     </div>
   );
 }
+
+// Context for closing menu
+import { createContext, useContext } from "react";
+
+const DropdownMenuContext = createContext<{ closeMenu: () => void }>({
+  closeMenu: () => {},
+});
 
 interface DropdownMenuItemProps {
   children: ReactNode;
@@ -65,18 +78,23 @@ export function DropdownMenuItem({
   onClick,
   className,
 }: DropdownMenuItemProps) {
-  const handleClick = () => {
-    onClick?.();
-    // 通知父组件关闭菜单（通过事件冒泡）
-    const event = new Event("close-menu", { bubbles: true });
-    document.dispatchEvent(event);
+  const { closeMenu } = useContext(DropdownMenuContext);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    console.log("DropdownMenuItem clicked"); // 调试日志
+    closeMenu();
+    if (onClick) {
+      onClick();
+    }
   };
 
   return (
     <div
       onClick={handleClick}
       className={cn(
-        "px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors",
+        "px-4 py-2 text-sm text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors",
         className
       )}
     >
@@ -84,4 +102,3 @@ export function DropdownMenuItem({
     </div>
   );
 }
-

@@ -3,14 +3,78 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* 背景基调 - 极淡蓝灰 */
+    --background: 248 250 252; /* slate-50 */
+    --background-subtle: 241 245 249; /* slate-100 */
+    
+    /* 内容载体 - 纯白 */
+    --surface: 255 255 255;
+    --surface-elevated: 255 255 255;
+    
+    /* 文字色阶 */
+    --foreground: 15 23 42; /* slate-900 */
+    --foreground-muted: 71 85 105; /* slate-600 */
+    --foreground-subtle: 148 163 184; /* slate-400 */
+    
+    /* 品牌主色 - Indigo */
+    --primary: 99 102 241; /* indigo-500 */
+    --primary-hover: 79 70 229; /* indigo-600 */
+    --primary-light: 238 242 255; /* indigo-50 */
+    --primary-foreground: 255 255 255;
+    
+    /* 功能色 */
+    --success: 34 197 94; /* green-500 */
+    --warning: 245 158 11; /* amber-500 */
+    --destructive: 239 68 68; /* red-500 */
+    --destructive-foreground: 255 255 255;
+    
+    /* 边框 - 淡色 */
+    --border: 226 232 240; /* slate-200 */
+    --border-light: 241 245 249; /* slate-100 */
+    
+    /* 输入框 */
+    --input: 226 232 240;
+    --ring: 99 102 241;
+    
+    /* 卡片 */
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    
+    /* 弹出层 */
+    --popover: 255 255 255;
+    --popover-foreground: 15 23 42;
+    
+    /* 次要元素 */
+    --secondary: 241 245 249;
+    --secondary-foreground: 71 85 105;
+    
+    /* 静音元素 */
+    --muted: 248 250 252;
+    --muted-foreground: 100 116 139;
+    
+    /* 强调色 */
+    --accent: 238 242 255;
+    --accent-foreground: 67 56 202;
+  }
+
+  html {
+    background: rgb(var(--background));
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900;
+    color: rgb(var(--foreground));
+    background: rgb(var(--background) / 0.8);
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+      'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
+  }
+
+  * {
+    border-color: rgb(var(--border) / 0.6);
   }
 }
 
@@ -18,5 +82,97 @@
   width: 100%;
   height: 100vh;
   overflow: hidden;
+  background: transparent;
 }
 
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--border));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--foreground-subtle));
+}
+
+/* 玻璃态效果 - 柔和版 */
+.glass {
+  background: rgb(var(--surface) / 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgb(var(--border) / 0.5);
+}
+
+.glass-subtle {
+  background: rgb(var(--background) / 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* 卡片样式 */
+.card-surface {
+  background: rgb(var(--surface));
+  border: 1px solid rgb(var(--border) / 0.6);
+  border-radius: 0.75rem;
+}
+
+/* 轻微阴影 */
+.shadow-soft {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+}
+
+.shadow-soft-md {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+/* 渐变文字 */
+.gradient-text {
+  background: linear-gradient(135deg, rgb(var(--foreground)) 0%, rgb(var(--foreground-muted)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 品牌色发光效果 */
+.glow-brand {
+  box-shadow: 0 0 20px rgb(var(--primary) / 0.15);
+}
+
+/* 悬浮动画 */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
+}
+
+/* 导航项激活状态 */
+.nav-item-active {
+  background: rgb(var(--primary-light));
+  color: rgb(var(--primary-hover));
+}
+
+/* 侧边栏背景 */
+.sidebar-bg {
+  background: rgb(var(--background-subtle) / 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* 主内容区背景 */
+.main-content-bg {
+  background: rgb(var(--surface) / 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}

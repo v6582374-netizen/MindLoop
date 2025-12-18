@@ -6,6 +6,8 @@ use rusqlite::{Connection, Result as SqlResult};
 use tauri::{Emitter, Manager};
 use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, GlobalShortcutExt};
 use tauri_plugin_notification::NotificationExt;
+#[cfg(target_os = "macos")]
+use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 use std::sync::Mutex;
 use std::collections::HashSet;
 use rand::seq::SliceRandom;
@@ -87,6 +89,24 @@ fn init_database(app: &tauri::AppHandle) -> SqlResult<std::path::PathBuf> {
         [],
     )?;
     
+    // 创建 quiz_sessions 表（复习历史）
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS quiz_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+            score INTEGER DEFAULT 0,
+            total_questions INTEGER DEFAULT 0,
+            content_json TEXT NOT NULL
+        )",
+        [],
+    )?;
+    
+    // 创建 quiz_sessions 索引
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_quiz_sessions_created_at ON quiz_sessions(created_at)",
+        [],
+    )?;
+    
     println!("✅ [数据库初始化] 表结构创建/更新成功");
     
     // 插入测试数据（如果表是空的）
@@ -140,6 +160,16 @@ struct QuizQuestion {
     explanation: String,
 }
 
+// 复习会话结构
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+struct QuizSession {
+    id: i64,
+    created_at: i64,
+    score: i32,
+    total_questions: i32,
+    content_json: String,
+}
+
 // 保存笔记到数据库
 fn save_note_to_db(
     db_path: &std::path::PathBuf,
@@ -151,6 +181,22 @@ fn save_note_to_db(
 ) -> SqlResult<i64> {
     println!("💾 [数据库] 打开数据库连接: {:?}", db_path);
     let conn = Connection::open(db_path)?;
+    
+    // 智能去重：检查最近2秒内是否有相同内容
+    let current_time = Utc::now().timestamp();
+    let duplicate_check: Option<(String, i64)> = conn.query_row(
+        "SELECT content, created_at FROM notes ORDER BY id DESC LIMIT 1",
+        [],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    ).ok();
+    
+    if let Some((last_content, last_created_at)) = duplicate_check {
+        let time_diff = current_time - last_created_at;
+        if last_content == content && time_diff < 2 {
+            println!("⚠️ [去重] 检测到重复内容（{}秒内），跳过保存", time_diff);
+            return Ok(-1); // 返回 -1 表示跳过
+        }
+    }
     
     let category_val = category.unwrap_or_else(|| "inbox".to_string());
     let content_type_val = content_type.unwrap_or_else(|| "text".to_string());
@@ -1137,6 +1183,164 @@ fn get_dashboard_stats(
     }))
 }
 
+// 保存复习会话到历史
+#[tauri::command]
+fn save_quiz_session(
+    content_json: String,
+    score: Option<i32>,
+    total_questions: Option<i32>,
+    db_state: tauri::State<'_, Mutex<DbState>>,
+) -> Result<i64, String> {
+    let db_path = {
+        let state = db_state.lock().map_err(|e| format!("获取数据库状态失败: {}", e))?;
+        state.db_path.clone()
+    };
+    
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("打开数据库失败: {}", e))?;
+    
+    conn.execute(
+        "INSERT INTO quiz_sessions (content_json, score, total_questions) VALUES (?1, ?2, ?3)",
+        rusqlite::params![content_json, score.unwrap_or(0), total_questions.unwrap_or(0)],
+    )
+    .map_err(|e| format!("保存复习会话失败: {}", e))?;
+    
+    let session_id = conn.last_insert_rowid();
+    println!("✅ [复习历史] 保存复习会话成功，ID: {}", session_id);
+    Ok(session_id)
+}
+
+// 获取复习历史列表
+#[tauri::command]
+fn get_quiz_sessions(
+    start_time: Option<i64>,
+    end_time: Option<i64>,
+    limit: Option<i32>,
+    db_state: tauri::State<'_, Mutex<DbState>>,
+) -> Result<Vec<QuizSession>, String> {
+    let db_path = {
+        let state = db_state.lock().map_err(|e| format!("获取数据库状态失败: {}", e))?;
+        state.db_path.clone()
+    };
+    
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("打开数据库失败: {}", e))?;
+    
+    let mut query = "SELECT id, created_at, score, total_questions, content_json FROM quiz_sessions".to_string();
+    let mut conditions = Vec::new();
+    let mut params: Vec<i64> = Vec::new();
+    
+    if let Some(start) = start_time {
+        conditions.push("created_at >= ?".to_string());
+        params.push(start);
+    }
+    
+    if let Some(end) = end_time {
+        conditions.push("created_at <= ?".to_string());
+        params.push(end);
+    }
+    
+    if !conditions.is_empty() {
+        query.push_str(" WHERE ");
+        query.push_str(&conditions.join(" AND "));
+    }
+    
+    query.push_str(" ORDER BY created_at DESC");
+    
+    if let Some(lim) = limit {
+        query.push_str(&format!(" LIMIT {}", lim));
+    }
+    
+    let mut stmt = conn.prepare(&query)
+        .map_err(|e| format!("准备查询失败: {}", e))?;
+    
+    let parse_row = |row: &rusqlite::Row| -> rusqlite::Result<QuizSession> {
+        Ok(QuizSession {
+            id: row.get(0)?,
+            created_at: row.get(1)?,
+            score: row.get(2)?,
+            total_questions: row.get(3)?,
+            content_json: row.get(4)?,
+        })
+    };
+    
+    let sessions_iter = if params.is_empty() {
+        stmt.query_map([], parse_row)
+    } else if params.len() == 1 {
+        stmt.query_map([params[0]], parse_row)
+    } else {
+        stmt.query_map([params[0], params[1]], parse_row)
+    }
+    .map_err(|e| format!("查询失败: {}", e))?;
+    
+    let mut sessions = Vec::new();
+    for session in sessions_iter {
+        sessions.push(session.map_err(|e| format!("读取复习会话失败: {}", e))?);
+    }
+    
+    Ok(sessions)
+}
+
+// 获取单个复习会话详情
+#[tauri::command]
+fn get_quiz_session(
+    id: i64,
+    db_state: tauri::State<'_, Mutex<DbState>>,
+) -> Result<QuizSession, String> {
+    let db_path = {
+        let state = db_state.lock().map_err(|e| format!("获取数据库状态失败: {}", e))?;
+        state.db_path.clone()
+    };
+    
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("打开数据库失败: {}", e))?;
+    
+    let session = conn.query_row(
+        "SELECT id, created_at, score, total_questions, content_json FROM quiz_sessions WHERE id = ?",
+        [id],
+        |row| {
+            Ok(QuizSession {
+                id: row.get(0)?,
+                created_at: row.get(1)?,
+                score: row.get(2)?,
+                total_questions: row.get(3)?,
+                content_json: row.get(4)?,
+            })
+        },
+    )
+    .map_err(|e| format!("查询复习会话失败: {}", e))?;
+    
+    Ok(session)
+}
+
+// 删除复习会话
+#[tauri::command]
+fn delete_quiz_session(
+    id: i64,
+    db_state: tauri::State<'_, Mutex<DbState>>,
+) -> Result<(), String> {
+    let db_path = {
+        let state = db_state.lock().map_err(|e| format!("获取数据库状态失败: {}", e))?;
+        state.db_path.clone()
+    };
+    
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("打开数据库失败: {}", e))?;
+    
+    let rows_affected = conn.execute(
+        "DELETE FROM quiz_sessions WHERE id = ?",
+        [id],
+    )
+    .map_err(|e| format!("删除复习会话失败: {}", e))?;
+    
+    if rows_affected == 0 {
+        return Err(format!("未找到 ID 为 {} 的复习会话", id));
+    }
+    
+    println!("✅ [复习历史] 删除复习会话成功，ID: {}", id);
+    Ok(())
+}
+
 // 获取热力图数据（过去365天的活动）
 #[tauri::command]
 fn get_heatmap_data(
@@ -1484,8 +1688,16 @@ fn main() {
             tauri_plugin_global_shortcut::Builder::new()
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![get_all_notes, generate_daily_review, generate_insights, mark_notes_as_reviewed, delete_note, update_note, update_review_status, get_dashboard_stats, get_heatmap_data])
+        .invoke_handler(tauri::generate_handler![get_all_notes, generate_daily_review, generate_insights, mark_notes_as_reviewed, delete_note, update_note, update_review_status, get_dashboard_stats, get_heatmap_data, save_quiz_session, get_quiz_sessions, get_quiz_session, delete_quiz_session])
         .setup(|app| {
+            // 配置 macOS 磨砂效果 - 浅色水晶风格
+            #[cfg(target_os = "macos")]
+            {
+                let window = app.get_webview_window("main").unwrap();
+                apply_vibrancy(&window, NSVisualEffectMaterial::UnderWindowBackground, None, None)
+                    .expect("无法应用磨砂效果");
+                println!("✅ [窗口] 已应用 macOS 磨砂效果 (UnderWindowBackground)");
+            }
             // 应用启动时初始化数据库
             let db_path = match init_database(app.handle()) {
                 Ok(path) => path,
