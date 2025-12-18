@@ -3,35 +3,14 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", 
-      "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", 
-      "Droid Sans", "Helvetica Neue", sans-serif;
+  body {
+    @apply bg-gray-50 text-gray-900;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  body {
-    @apply bg-transparent text-white;
-    margin: 0;
-  }
-
-  /* 深色模式下的滚动条样式 */
-  .dark ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  .dark ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-
-  .dark ::-webkit-scrollbar-thumb {
-    @apply bg-white/20 rounded-full;
-  }
-
-  .dark ::-webkit-scrollbar-thumb:hover {
-    @apply bg-white/30;
   }
 }
 
@@ -40,3 +19,4 @@
   height: 100vh;
   overflow: hidden;
 }
+
