@@ -3,7 +3,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use rusqlite::{Connection, Result as SqlResult};
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Manager, WebviewWindow};
+#[cfg(target_os = "macos")]
+use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, GlobalShortcutExt};
 use tauri_plugin_notification::NotificationExt;
 use std::sync::Mutex;
@@ -1486,6 +1488,12 @@ fn main() {
         )
         .invoke_handler(tauri::generate_handler![get_all_notes, generate_daily_review, generate_insights, mark_notes_as_reviewed, delete_note, update_note, update_review_status, get_dashboard_stats, get_heatmap_data])
         .setup(|app| {
+            // 配置窗口磨砂效果
+            let window = app.get_webview_window("main").unwrap();
+            #[cfg(target_os = "macos")]
+            apply_vibrancy(&window, NSVisualEffectMaterial::HudWindow, None, None)
+                .expect("Unsupported platform! 'apply_vibrancy' is only supported on macOS");
+
             // 应用启动时初始化数据库
             let db_path = match init_database(app.handle()) {
                 Ok(path) => path,
